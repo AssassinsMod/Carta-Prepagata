@@ -45,7 +45,7 @@ public abstract class Importo implements Comparable<Importo> {
 	public int compareTo(Importo i) {
 		// i confronti vanno fatti nella stessa valuta, quindi si passa in euro:
 		return this.getImportoInEuro().getValoreInCentesimi()
-			      - i.getImportoInEuro().getValoreInCentesimi();
+		         - i.getImportoInEuro().getValoreInCentesimi();
 	}
 
 	/** Restituisce una rappresentazione dello stato dell'oggetto. */
