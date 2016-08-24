@@ -71,6 +71,12 @@ public class CartaPrepagata {
 	public boolean addebita(Importo i, String pin) {
 		// essendo `boolean` presumo che debba ritornare il risultato dell'op. di
 		// aggiunta all'arraylist (non che sia scritto ¯\_(ツ)_/¯)
+		if (!checkPin(pin)) return false;
+		if (this.importo.sottrai(i).getValoreInCentesimi() < 0)
+			throw new IllegalArgumentException("Credito insufficiente!");
+
+		this.importo = this.importo.sottrai(i);
+		return this.movimenti.add(new Addebito(i));
 	}
 
 	/**
@@ -78,12 +84,18 @@ public class CartaPrepagata {
 	 * è tale da far superare il plafond, solleva un’eccezione.
 	 */
 	public boolean ricarica(Importo i, String pin) {
+		if (!checkPin(pin)) return false;
+		if (this.importo.somma(i).getValoreInCentesimi() / 100D > plafond)
+			throw new IllegalArgumentException("Raggiunto il credito massimo!");
 
+		this.importo = this.importo.somma(i);
+		return this.movimenti.add(new Ricarica(i));
 	}
 
 	/** Restituisce l’importo disponibile sulla carta. */
 	public ImportoInEuro getResiduo(String pin) {
-
+		if (!checkPin(pin)) return null;
+		return this.importo.getImportoInEuro();
 	}
 
 	/**
@@ -93,11 +105,33 @@ public class CartaPrepagata {
 	public Importo[] getMovimentiOrdinati() {
 		// afaik `Ricarica` ed `Addebito` estendono `Operazione`, non `Importo`..
 		// "restituisce la lista delle operazioni" -> public Importo[]... why?
+
+		List<Importo> addebiti = new ArrayList<Importo>();
+		List<Importo> ricariche = new ArrayList<Importo>();
+
+		for (Operazione o : this.movimenti) {
+			if (o instanceof Addebito) addebiti.add(o.getImporto());
+			else if (o instanceof Ricarica) ricariche.add(o.getImporto());
+			// ^ l'else sarebbe bastato ma la mia fiducia è assai scarsa
+		}
+
+		// sorting "naturale" (viene usato `Importo#compareTo`)
+		addebiti.sort(null);
+		ricariche.sort(null);
+
+		// preparazione del risultato
+		Importo[] operazioni = new Importo[addebiti.size() + ricariche.size()];
+
+		int index = 0;
+		for (Importo i : ricariche) operazioni[index++] = i;
+		for (Importo i : addebiti) operazioni[index++] = i;
+
+		return operazioni;
 	}
 
 	/** Restituisce una rappresentazione dello stato dell’oggetto. */
 	@Override
 	public String toString() {
-
+		return "Carta[" + titolare + ", " + this.importo + "]";
 	}
 }
